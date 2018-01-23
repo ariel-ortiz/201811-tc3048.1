@@ -15,11 +15,8 @@ public class GeneratorExample {
     public static void Main() {
         var enumerable = Start();
         var enumerator = enumerable.GetEnumerator();
-        enumerator.MoveNext();
-        Console.WriteLine(enumerator.Current);
-        enumerator.MoveNext();
-        Console.WriteLine(enumerator.Current);
-        enumerator.MoveNext();
-        Console.WriteLine(enumerator.Current);
+        while (enumerator.MoveNext()) {
+            Console.WriteLine(enumerator.Current);
+        }
     }
 }
