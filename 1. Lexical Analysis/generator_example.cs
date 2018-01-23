@@ -13,10 +13,8 @@ public class GeneratorExample {
     }
 
     public static void Main() {
-        var enumerable = Start();
-        var enumerator = enumerable.GetEnumerator();
-        while (enumerator.MoveNext()) {
-            Console.WriteLine(enumerator.Current);
+        foreach (var x in Start()) {
+            Console.WriteLine(x);
         }
     }
 }
