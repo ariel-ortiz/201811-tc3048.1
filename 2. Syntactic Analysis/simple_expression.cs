@@ -4,8 +4,10 @@
 
     Expr -> Expr "+" Term
     Expr -> Term
-    Term -> Term "*" Fact
-    Term -> Fact
+    Term -> Term "*" Pow
+    Term -> Pow
+    Pow  -> Fact "^" Pow
+    Pow  -> Fact
     Fact -> Int
     Fact -> "(" Expr ")"
 
@@ -13,7 +15,8 @@
 
     Prog -> Expr EOF
     Expr -> Term ("+" Term)*
-    Term -> Fact ("*" Fact)*
+    Term -> Pow ("*" Pow)*
+    Pow  -> Fact ("^" Pow)?
     Fact -> Int | "(" Expr ")"
 
 */
@@ -23,7 +26,7 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
 public enum TokenCategory {
-    PLUS, TIMES, PAR_OPEN, PAR_CLOSE, INT, EOF, ILLEGAL
+    PLUS, TIMES, POW, PAR_OPEN, PAR_CLOSE, INT, EOF, ILLEGAL
 }
 
 public class Token {
@@ -40,7 +43,7 @@ public class Token {
 
 public class Scanner {
     readonly String input;
-    static readonly Regex regex = new Regex(@"([+])|([*])|([(])|([)])|(\d+)|(\s)|(.)");
+    static readonly Regex regex = new Regex(@"([+])|([*])|([(])|([)])|(\d+)|(\s)|(\^)|(.)");
     public Scanner(String input) {
         this.input = input;
     }
@@ -59,6 +62,8 @@ public class Scanner {
             } else if (m.Groups[6].Length > 0) {
                 continue;
             } else if (m.Groups[7].Length > 0) {
+                yield return new Token(TokenCategory.POW, m.Value);
+            } else if (m.Groups[8].Length > 0) {
                 yield return new Token(TokenCategory.ILLEGAL, m.Value);
             }
         }
@@ -87,34 +92,46 @@ public class Parser {
             throw new SyntaxError();
         }
     }
-    public void Prog() {
-        Expr();
+    public int Prog() {
+        var result = Expr();
         Expect(TokenCategory.EOF);
+        return result;
     }
-    public void Expr() {
-        Term();
+    public int Expr() {
+        var result = Term();
         while (Current == TokenCategory.PLUS) {
             Expect(TokenCategory.PLUS);
-            Term();
+            result += Term();
         }
+        return result;
     }
-    public void Term() {
-        Fact();
+    public int Term() {
+        var result = Pow();
         while (Current == TokenCategory.TIMES) {
             Expect(TokenCategory.TIMES);
-            Fact();
+            result *= Pow();
         }
+        return result;
     }
-    public void Fact() {
+    public int Pow() {
+        var result = Fact();
+        if (Current == TokenCategory.POW) {
+            Expect(TokenCategory.POW);
+            var expo = Pow();
+            result = (int) Math.Pow(result, expo);
+        }
+        return result;
+    }
+    public int Fact() {
         switch (Current) {
         case TokenCategory.INT:
-            Expect(TokenCategory.INT);
-            break;
+            var t = Expect(TokenCategory.INT);
+            return Convert.ToInt32(t.Lexeme);
         case TokenCategory.PAR_OPEN:
             Expect(TokenCategory.PAR_OPEN);
-            Expr();
+            var value = Expr();
             Expect(TokenCategory.PAR_CLOSE);
-            break;
+            return value;
         default:
             throw new SyntaxError();
         }
@@ -126,8 +143,8 @@ public class SimpleExpression {
         var line = Console.ReadLine();
         var parser = new Parser(new Scanner(line).Start().GetEnumerator());
         try {
-            parser.Prog();
-            Console.WriteLine("Syntax OK!");
+            var result = parser.Prog();
+            Console.WriteLine(result);
         } catch (SyntaxError) {
             Console.WriteLine("Bad syntax!");
         }
