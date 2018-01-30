@@ -9,6 +9,13 @@
     Fact -> Int
     Fact -> "(" Expr ")"
 
+    Convert into LL(1):
+
+    Prog -> Expr EOF
+    Expr -> Term ("+" Term)*
+    Term -> Fact ("*" Fact)*
+    Fact -> Int | "(" Expr ")"
+
 */
 
 using System;
@@ -80,12 +87,49 @@ public class Parser {
             throw new SyntaxError();
         }
     }
+    public void Prog() {
+        Expr();
+        Expect(TokenCategory.EOF);
+    }
+    public void Expr() {
+        Term();
+        while (Current == TokenCategory.PLUS) {
+            Expect(TokenCategory.PLUS);
+            Term();
+        }
+    }
+    public void Term() {
+        Fact();
+        while (Current == TokenCategory.TIMES) {
+            Expect(TokenCategory.TIMES);
+            Fact();
+        }
+    }
+    public void Fact() {
+        switch (Current) {
+        case TokenCategory.INT:
+            Expect(TokenCategory.INT);
+            break;
+        case TokenCategory.PAR_OPEN:
+            Expect(TokenCategory.PAR_OPEN);
+            Expr();
+            Expect(TokenCategory.PAR_CLOSE);
+            break;
+        default:
+            throw new SyntaxError();
+        }
+    }
 }
 
 public class SimpleExpression {
     public static void Main() {
         var line = Console.ReadLine();
         var parser = new Parser(new Scanner(line).Start().GetEnumerator());
+        try {
+            parser.Prog();
+            Console.WriteLine("Syntax OK!");
+        } catch (SyntaxError) {
+            Console.WriteLine("Bad syntax!");
+        }
     }
 }
-
