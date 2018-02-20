@@ -191,6 +191,12 @@ class Node: IEnumerable<Node> {
     }
 }
 
+class Prog : Node {}
+class Plus : Node {}
+class Times : Node {}
+class Pow : Node {}
+class Int : Node {}
+
 public class SimpleExpression {
     public static void Main() {
         Console.Write("> ");
