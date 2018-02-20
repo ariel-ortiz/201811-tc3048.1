@@ -1,2 +1,2 @@
-imple_expression.exe : simple_expression.cs
+simple_expression.exe : simple_expression.cs
 	mcs simple_expression.cs
