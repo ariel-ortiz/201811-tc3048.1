@@ -1,5 +1,5 @@
 //==========================================================
-// Type your name and student ID here.
+// Solution de problem 1.
 //==========================================================
 
 using System;
@@ -9,8 +9,14 @@ using System.Text.RegularExpressions;
 namespace Exam1 {
     public class Problem1 {
         public static void Main(String[] args) {
-            // Your code goes here.
+            if (args.Length != 1) {
+                Console.WriteLine("Please specify the input file.");
+                Environment.Exit(1);
+            }
+            String fileName = args[0];
+            String fileContents = File.ReadAllText(fileName);
+            Regex regex = new Regex(@"^[Cc*].*\n?", RegexOptions.Multiline);
+            Console.Write(regex.Replace(fileContents, ""));
         }
     }
 }
-
