@@ -216,6 +216,90 @@ public class Times : Node {}
 public class Pow   : Node {}
 public class Int   : Node {}
 
+public class EvalVisitor {
+
+    public int Visit(Prog node) {
+        return Visit((dynamic) node[0]);        
+    }
+
+    public int Visit(Plus node) {
+        return Visit((dynamic) node[0]) + Visit((dynamic) node[1]);
+    }
+
+    public int Visit(Times node) {
+        return Visit((dynamic) node[0]) * Visit((dynamic) node[1]);
+    }
+
+    public int Visit(Pow node) {
+        return (int) Math.Pow(
+            Visit((dynamic) node[0]), 
+            Visit((dynamic) node[1]));
+    }
+
+    public int Visit(Int node) {
+        return Convert.ToInt32(node.AnchorToken.Lexeme);
+    }
+}
+
+public class LispVisitor {
+
+    public String Visit(Prog node) {
+        return Visit((dynamic) node[0]);
+    }
+
+    public String Visit(Plus node) {
+        return "(+ " + Visit((dynamic) node[0]) + " "
+        + Visit((dynamic) node[1]) + ")";
+    }
+
+    public String Visit(Times node) {
+        return "(* " + Visit((dynamic) node[0]) + " "
+            + Visit((dynamic) node[1]) + ")";
+    }
+
+    public String Visit(Pow node) {
+        return "(expt " + Visit((dynamic) node[0]) + " "
+            + Visit((dynamic) node[1]) + ")";
+    }
+
+    public String Visit(Int node) {
+        return node.AnchorToken.Lexeme;
+    }
+}
+
+public class CVisitor {
+    public String Visit(Prog node) {
+        return @"
+#include <stdio.h>
+#include <math.h>
+
+int main(void) {
+    printf(""%d\n"", " + Visit((dynamic) node[0]) + @");
+    return 0;
+}
+";
+    }
+
+    public String Visit(Plus node) {
+        return "(" + Visit((dynamic) node[0]) + "+"
+            + Visit((dynamic) node[1]) + ")";
+    }
+
+    public String Visit(Times node) {
+        return "(" + Visit((dynamic) node[0]) + "*"
+            + Visit((dynamic) node[1]) + ")";
+    }
+
+    public String Visit(Pow node) {
+        return "(int) pow(" + Visit((dynamic) node[0]) + ","
+            + Visit((dynamic) node[1]) + ")";
+    }
+
+    public String Visit(Int node) {
+        return node.AnchorToken.Lexeme;
+    }
+}
+
 public class SimpleExpression {
     public static void Main() {
         Console.Write("> ");
@@ -223,7 +307,13 @@ public class SimpleExpression {
         var parser = new Parser(new Scanner(line).Start().GetEnumerator());
         try {
             var tree = parser.Prog();
+            var resultEval = new EvalVisitor().Visit((dynamic) tree);
+            var resultLisp = new LispVisitor().Visit((dynamic) tree);
+            var resultC = new CVisitor().Visit((dynamic) tree);
             Console.WriteLine(tree.ToStringTree());
+            Console.WriteLine(resultEval);
+            Console.WriteLine(resultLisp);
+            Console.WriteLine(resultC);
         } catch (SyntaxError) {
             Console.Error.WriteLine("Found syntax error!");
         }
