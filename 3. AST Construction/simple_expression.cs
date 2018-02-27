@@ -98,47 +98,66 @@ public class Parser {
         }
     }
 
-    public void Prog() {
-        Expr();
+    public Node Prog() {
+        var n = new Prog() {
+            Expr()
+        };
         Expect(TokenCategory.EOF);
+        return n;
     }
 
-    public void Expr() {
-        Term();
+    public Node Expr() {
+        var n1 = Term();
         while (Current == TokenCategory.PLUS) {
-            Expect(TokenCategory.PLUS);
-            Term();
+            var n2 = new Plus() {
+                AnchorToken = Expect(TokenCategory.PLUS)
+            };
+            n2.Add(n1);
+            n2.Add(Term());
+            n1 = n2;
         }
+        return  n1;
     }
 
-    public void Term() {
-        Pow();
+    public Node Term() {
+        var n1 = Pow();
         while (Current == TokenCategory.TIMES) {
-            Expect(TokenCategory.TIMES);
-            Pow();
+            var n2 = new Times() {
+                AnchorToken = Expect(TokenCategory.TIMES)
+            };
+            n2.Add(n1);
+            n2.Add(Pow());
+            n1 = n2;
         }
+        return n1;
     }
 
-    public void Pow() {
-        Fact();
+    public Node Pow() {
+        var n1 = Fact();
         if (Current == TokenCategory.POW) {
-            Expect(TokenCategory.POW);
-            Pow();
+            var n2 = new Pow() {
+                AnchorToken = Expect(TokenCategory.POW)
+            };
+            n2.Add(n1);
+            n2.Add(Pow());
+            n1 = n2;
         }
+        return n1;
     }
 
-    public void Fact() {
+    public Node Fact() {
         switch (Current) {
 
         case TokenCategory.INT:
-            Expect(TokenCategory.INT);
-            break;
+            return new Int() {
+                AnchorToken = Expect(TokenCategory.INT)
+            };
 
         case TokenCategory.PAR_OPEN:
             Expect(TokenCategory.PAR_OPEN);
-            Expr();
+            var n = Expr();
             Expect(TokenCategory.PAR_CLOSE);
-            break;
+            return n;
 
         default:
             throw new SyntaxError();
@@ -146,7 +165,7 @@ public class Parser {
     }
 }
 
-class Node: IEnumerable<Node> {
+public class Node: IEnumerable<Node> {
 
     IList<Node> children = new List<Node>();
 
@@ -191,11 +210,11 @@ class Node: IEnumerable<Node> {
     }
 }
 
-class Prog : Node {}
-class Plus : Node {}
-class Times : Node {}
-class Pow : Node {}
-class Int : Node {}
+public class Prog  : Node {}
+public class Plus  : Node {}
+public class Times : Node {}
+public class Pow   : Node {}
+public class Int   : Node {}
 
 public class SimpleExpression {
     public static void Main() {
@@ -203,8 +222,8 @@ public class SimpleExpression {
         var line = Console.ReadLine();
         var parser = new Parser(new Scanner(line).Start().GetEnumerator());
         try {
-            parser.Prog();
-            Console.WriteLine("Syntax OK!");
+            var tree = parser.Prog();
+            Console.WriteLine(tree.ToStringTree());
         } catch (SyntaxError) {
             Console.Error.WriteLine("Found syntax error!");
         }
