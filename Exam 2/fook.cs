@@ -4,7 +4,7 @@
 // LL(1) Grammar:
 // 
 //      prog       -> expr EOF
-//      expr       -> symbol ("+"|"-")* | "{" expr_list "}"
+//      expr       -> (symbol | "{" expr_list "}")("+"|"-")*
 //      expr_list  -> expr ("," expr)*
 //==========================================================
 
