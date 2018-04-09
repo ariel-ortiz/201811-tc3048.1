@@ -1,3 +1,12 @@
+//==========================================================
+// Solution de problem 1.
+//
+// LL(1) Grammar:
+// 
+//      prog       -> expr EOF
+//      expr       -> symbol ("+"|"-")* | "{" expr_list "}"
+//      expr_list  -> expr ("," expr)*
+//==========================================================
 
 using System;
 using System.Collections.Generic;
