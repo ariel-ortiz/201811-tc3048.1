@@ -1,6 +1,4 @@
-//==========================================================
-// Type your name and student ID here.
-//==========================================================
+/* exam 2 */
 
 %{
 
@@ -14,18 +12,26 @@ void yyerror(char *s, ...);
 %}
 
 /* Declare tokens */
-%token SYMBOL EOL ILLEGAL
+%token SYMBOL SUCCESSOR PREDECESSOR MAX_LEFT MAX_RIGHT
+%token COMMA EOL ILLEGAL
 
 %%
 
 fooklist:
     /* nothing */ { } /* matches at beginning of input */
-    | fooklist expr EOL { printf("%c\n> ", $2 + 'a'); } /* EOL is end of an expression */
+    | fooklist exp EOL { printf("%c\n> ", $2); } /* EOL is end of an expression */
 ;
 
-expr:
+exp:
     SYMBOL
+    | exp SUCCESSOR              { $$ = $1 == 'z' ? 'a' : $1 + 1; }
+    | exp PREDECESSOR            { $$ = $1 == 'a' ? 'z' : $1 - 1; }
+    | MAX_LEFT maxlist MAX_RIGHT { $$ = $2; }
 ;
+
+maxlist:
+    exp
+    | maxlist COMMA exp { $$ = $1 > $3 ? $1 : $3; }
 
 %%
 

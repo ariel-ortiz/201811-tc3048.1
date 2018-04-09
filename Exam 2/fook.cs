@@ -1,22 +1,20 @@
-//==========================================================
-// Type your name and student ID here.
-//==========================================================
 
 using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
 public enum TokenCategory {
-    SYMBOL, EOL, ILLEGAL, EOF
+    SYMBOL, SUCCESSOR, PREDECESSOR, MAX_LEFT, MAX_RIGHT, 
+    COMMA, EOL, ILLEGAL, EOF
 }
 
 public class Token {
     TokenCategory category;
     String lexeme;
-    public TokenCategory Category {
+    public TokenCategory Category { 
         get { return category; }
     }
-    public String Lexeme {
+    public String Lexeme { 
         get { return lexeme; }
     }
     public Token(TokenCategory category, String lexeme) {
@@ -30,7 +28,7 @@ public class Token {
 
 public class Scanner {
     readonly String input;
-    static readonly Regex regex = new Regex(@"([a-z])|(\n)|(.)");
+    static readonly Regex regex = new Regex(@"([a-z])|(\+)|(\-)|(\{)|(\})|(\,)|(\n)|([ \t])|(.)");
     public Scanner(String input) {
         this.input = input;
     }
@@ -39,8 +37,20 @@ public class Scanner {
             if (m.Groups[1].Success) {
                 yield return new Token(TokenCategory.SYMBOL, m.Value);
             } else if (m.Groups[2].Success) {
-                yield return new Token(TokenCategory.EOL, m.Value);
+                yield return new Token(TokenCategory.SUCCESSOR, m.Value);
             } else if (m.Groups[3].Success) {
+                yield return new Token(TokenCategory.PREDECESSOR, m.Value);
+            } else if (m.Groups[4].Success) {
+                yield return new Token(TokenCategory.MAX_LEFT, m.Value);
+            } else if (m.Groups[5].Success) {
+                yield return new Token(TokenCategory.MAX_RIGHT, m.Value);
+            } else if (m.Groups[6].Success) {
+                yield return new Token(TokenCategory.COMMA, m.Value);
+            } else if (m.Groups[7].Success) {
+                yield return new Token(TokenCategory.EOL, m.Value);
+            } else if (m.Groups[8].Success) {
+                continue;
+            } else if (m.Groups[9].Success) {
                 yield return new Token(TokenCategory.ILLEGAL, m.Value);
             }
         }
@@ -75,15 +85,41 @@ public class Parser {
         return result;
     }
     public char Expr() {
-        return Symbol();
-    }
-    public char Symbol() {
-        if (Current == TokenCategory.SYMBOL) {
+        var result = 0;
+        switch (Current) {
+        case TokenCategory.SYMBOL:
             var token = Expect(TokenCategory.SYMBOL);
-            return token.Lexeme[0];
-        } else {
+            result = token.Lexeme[0];
+            break;
+        case TokenCategory.MAX_LEFT:
+            Expect(TokenCategory.MAX_LEFT);
+            result = ExprList();
+            Expect(TokenCategory.MAX_RIGHT);
+            break;
+        default:
             throw new SyntaxError();
         }
+        while (Current == TokenCategory.SUCCESSOR 
+                || Current == TokenCategory.PREDECESSOR) {
+            if (Current == TokenCategory.SUCCESSOR) {
+                Expect(TokenCategory.SUCCESSOR);
+                result = result == 'z' ? 'a' : result + 1;
+            } else if (Current == TokenCategory.PREDECESSOR) {
+                Expect(TokenCategory.PREDECESSOR);
+                result = result == 'a' ? 'z' : result - 1;
+            }
+        }
+        return (char) result;
+    }
+    
+    public char ExprList() {
+        var result = Expr();
+        while (Current == TokenCategory.COMMA) {
+            Expect(TokenCategory.COMMA);
+            var other = Expr();
+            result = result > other ? result : other;
+        }
+        return result;
     }
 }
 
