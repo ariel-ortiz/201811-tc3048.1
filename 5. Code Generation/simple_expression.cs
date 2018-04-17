@@ -23,6 +23,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -216,14 +217,59 @@ public class Times : Node {}
 public class Pow   : Node {}
 public class Int   : Node {}
 
+public class VisitCIL {
+    public String Visit(Prog node) {
+        return 
+@"// CIL example program.
+//
+// To assemble:
+//                 ilasm program.il
+
+.assembly 'example' { }
+
+.class public 'Test' extends ['mscorlib']'System'.'Object' {
+"
+        + "\t.method public static void 'whatever'() {\n"
+        + "\t\t.entrypoint\n"
+        + Visit((dynamic) node[0])
+        + "\t\tcall void class ['mscorlib']'System'.'Console'::'WriteLine'(int32)\n"
+        + "\t\tret\n"
+        + "\t}\n"
+        + "}\n";
+    }
+    public String Visit(Plus node) {
+        return Visit((dynamic) node[0])
+            + Visit((dynamic) node[1])
+            + "\t\tadd.ovf\n";
+    }
+    public String Visit(Times node) {
+        return Visit((dynamic) node[0])
+            + Visit((dynamic) node[1])
+            + "\t\tmul.ovf\n";
+    }
+    public String Visit(Pow node) {
+        return Visit((dynamic) node[0])
+            + "\t\tconv.r8\n"
+            + Visit((dynamic) node[1])
+            + "\t\tconv.r8\n"
+            + "\t\tcall float64 class ['mscorlib']'System'.'Math'::'Pow'(float64, float64)\n"
+            + "\t\tconv.ovf.i4\n";
+    }
+    public String Visit(Int node) {
+        return "\t\tldc.i4 " + node.AnchorToken.Lexeme + "\n";
+    }
+}
+
 public class SimpleExpression {
     public static void Main() {
         Console.Write("> ");
         var line = Console.ReadLine();
         var parser = new Parser(new Scanner(line).Start().GetEnumerator());
         try {
-            var tree = parser.Prog();            
-            Console.WriteLine(tree.ToStringTree());
+            var tree = parser.Prog();
+            File.WriteAllText(
+                "output.il",
+                new VisitCIL().Visit((dynamic) tree));            
         } catch (SyntaxError) {
             Console.Error.WriteLine("Found syntax error!");
         }
