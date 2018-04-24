@@ -225,6 +225,8 @@ public class VisitCIL {
 // To assemble:
 //                 ilasm program.il
 
+.assembly extern 'deeplingolib' { }
+
 .assembly 'example' { }
 
 .class public 'Test' extends ['mscorlib']'System'.'Object' {
@@ -232,7 +234,8 @@ public class VisitCIL {
         + "\t.method public static void 'whatever'() {\n"
         + "\t\t.entrypoint\n"
         + Visit((dynamic) node[0])
-        + "\t\tcall void class ['mscorlib']'System'.'Console'::'WriteLine'(int32)\n"
+        + "\t\tcall int32 class ['deeplingolib']'DeepLingo'.'Utils'::'Printi'(int32)\n"
+        + "\t\tpop\n"
         + "\t\tret\n"
         + "\t}\n"
         + "}\n";
